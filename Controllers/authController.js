@@ -1,6 +1,6 @@
-const generateToken = require('../config/generateToken');
-const { comparePassword, hashPassword } = require('../config/bcrypt');
-const { errorResponse, successResponse, internalErrorResponse, notFoundResponse } = require('../config/responseJson');
+const generateToken = require('../Config/generateToken');
+const { comparePassword, hashPassword } = require('../Config/bcrypt');
+const { errorResponse, successResponse, internalErrorResponse, notFoundResponse } = require('../Config/responseJson');
 const { users } = require('../Models');
 
 
