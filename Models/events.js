@@ -14,21 +14,14 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.DATE,
             allowNull: false,
             defaultValue: DataTypes.NOW
-        },
+        }, 
         eventLocation: {
             type: DataTypes.STRING,
+            allowNull: false,
+        },
+        eventCreateBy: {
+            type: DataTypes.INTEGER,
             allowNull: false
-        },
-        createdAt: {
-            allowNull: false,
-            type: DataTypes.DATE,
-            defaultValue: DataTypes.NOW
-        },
-        updatedAt: {
-            allowNull: false,
-            type: DataTypes.DATE,
-            defaultValue: DataTypes.NOW,
-            onUpdate: DataTypes.NOW
         }
     }, {
         tableName: 'events',

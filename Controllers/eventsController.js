@@ -12,12 +12,14 @@ const getEvents = async (req, res) => {
 
 const createEvent = async (req, res) => {
     const { eventName, eventDate, eventLocation } = req.body;
+    const eventCreateBy = req.admin.id; 
 
     try {
         const event = await events.create({
             eventName,
             eventDate,
-            eventLocation
+            eventLocation,
+            eventCreateBy
         });
 
         if (!event) {
@@ -32,11 +34,11 @@ const createEvent = async (req, res) => {
 
 const updateEvent = async (req, res) => {
     const { id } = req.params;
-    const { eventName, eventDate, eventLocation } = req.body;
+    const { eventName, eventDate, eventLocation, eventCreateBy } = req.body;
 
     try {
         const event = await events.findOne({
-            where: { id }
+            where: { eventID: id }
         });
 
         if (!event) {
@@ -47,16 +49,18 @@ const updateEvent = async (req, res) => {
         const updatedEvent = await events.update({
             eventName,
             eventDate,
-            eventLocation
+            eventLocation,
+            eventCreateBy
         }, {
-            where: { id }
+            where: { eventID: id }
         });
 
         const eventResponse = {
-            id: event.id,
+            eventID: event.eventID,
             eventName,
             eventDate,
-            eventLocation
+            eventLocation,
+            eventCreateBy
         };
 
         if (!updatedEvent) {
@@ -74,7 +78,7 @@ const showEventById = async (req, res) => {
 
     try {
         const event = await events.findOne({
-            where: { id }
+            where: { eventID: id }
         });
 
         if (!event) {
@@ -92,7 +96,7 @@ const deleteEvent = async (req, res) => {
 
     try {
         const event = await events.findOne({
-            where: { id }
+            where: { eventID: id }
         });
 
         if (!event) {
@@ -101,7 +105,7 @@ const deleteEvent = async (req, res) => {
         }
 
         const deletedEvent = await events.destroy({
-            where: { id }
+            where: { eventID: id }
         });
 
         if (!deletedEvent) {
@@ -113,6 +117,7 @@ const deleteEvent = async (req, res) => {
         internalErrorResponse(res, err, 500);
     }
 };
+
 
 module.exports = {
     createEvent,

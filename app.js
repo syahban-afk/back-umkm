@@ -5,6 +5,7 @@ const logger = require('morgan');
 
 const indexRouter = require('./Routes/index');
 const usersRouter = require('./Routes/users');
+const adminsRouter = require('./Routes/admins');
 const eventsRouter = require('./Routes/events');
 const feedbackRouter = require('./Routes/feedback');
 
@@ -19,12 +20,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Routes
 app.use('/', indexRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/admins', adminsRouter);
 app.use('/api/events', eventsRouter);
 app.use('/api/feedback', feedbackRouter);
 
 module.exports = app;
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });

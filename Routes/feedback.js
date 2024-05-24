@@ -3,7 +3,7 @@ const router = express.Router();
 
 const {
     createFeedback,
-    getFeedback,
+    getFeedbacks,
     updateFeedback,
     deleteFeedback,
     showFeedbackById
@@ -11,7 +11,7 @@ const {
 const authentication = require('../Middleware/authentication');
 
 // Routes
-router.get('', authentication, getFeedback);
+router.get('/show', authentication, getFeedbacks);
 router.post('/create', authentication, createFeedback);
 router.get('/:id/show', authentication, showFeedbackById);
 router.put('/:id/update', authentication, updateFeedback);

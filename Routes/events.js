@@ -8,10 +8,10 @@ const {
     deleteEvent,
     showEventById
 } = require('../Controllers/eventsController');
-const authentication = require('../Middleware/authentication');
+const authentication = require('../Middleware/authenticationAdmins');
 
 // Routes
-router.get('', authentication, getEvents);
+router.get('/show', authentication, getEvents);
 router.post('/create', authentication, createEvent);
 router.get('/:id/show', authentication, showEventById);
 router.put('/:id/update', authentication, updateEvent);

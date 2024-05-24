@@ -1,34 +1,33 @@
 const { successResponse, internalErrorResponse, errorResponse } = require('../Config/responseJson');
-const { feedback, users, events } = require('../Models');
+const { Feedback, User, Event } = require('../Models');
 
-const getFeedback = async (req, res) => {
+const getFeedbacks = async (req, res) => {
     try {
-        const feedbackList = await feedback.findAll({
+        const feedbackList = await Feedback.findAll({
             include: [
                 {
-                    model: users,
+                    model: User,
                     as: 'user',
                     attributes: ['id', 'name', 'email']
                 },
                 {
-                    model: events,
+                    model: Event,
                     as: 'event',
                     attributes: ['eventID', 'eventName']
                 }
             ]
         });
-        successResponse(res, 'Feedback fetched successfully', feedbackList, 200);
+        successResponse(res, 'Feedbacks fetched successfully', feedbackList, 200);
     } catch (err) {
         internalErrorResponse(res, err, 500);
     }
 };
 
 const createFeedback = async (req, res) => {
-    const userID = req.user.id;
-    const { eventID, rating, comments } = req.body;
+    const { userID, eventID, rating, comments } = req.body;
 
     try {
-        const newFeedback = await feedback.create({
+        const newFeedback = await Feedback.create({
             userID,
             eventID,
             rating,
@@ -47,13 +46,13 @@ const createFeedback = async (req, res) => {
 
 const updateFeedback = async (req, res) => {
     const { id } = req.params;
-    const userID = req.user.id;
     const { rating, comments } = req.body;
+    const userID = req.user.id;
 
     try {
-        const feedbackItem = await feedback.findOne({
+        const feedbackItem = await Feedback.findOne({
             where: {
-                id,
+                feedbackID: id,
                 userID
             }
         });
@@ -63,12 +62,12 @@ const updateFeedback = async (req, res) => {
             return;
         }
 
-        const updatedFeedback = await feedback.update({
+        const updatedFeedback = await Feedback.update({
             rating,
             comments
         }, {
             where: {
-                id,
+                feedbackID: id,
                 userID
             }
         });
@@ -88,19 +87,19 @@ const showFeedbackById = async (req, res) => {
     const userID = req.user.id;
 
     try {
-        const feedbackItem = await feedback.findOne({
+        const feedbackItem = await Feedback.findOne({
             where: {
-                id,
+                feedbackID: id,
                 userID
             },
             include: [
                 {
-                    model: users,
+                    model: User,
                     as: 'user',
                     attributes: ['id', 'name', 'email']
                 },
                 {
-                    model: events,
+                    model: Event,
                     as: 'event',
                     attributes: ['eventID', 'eventName']
                 }
@@ -122,9 +121,9 @@ const deleteFeedback = async (req, res) => {
     const userID = req.user.id;
 
     try {
-        const feedbackItem = await feedback.findOne({
+        const feedbackItem = await Feedback.findOne({
             where: {
-                id,
+                feedbackID: id,
                 userID
             }
         });
@@ -134,9 +133,9 @@ const deleteFeedback = async (req, res) => {
             return;
         }
 
-        const deletedFeedback = await feedback.destroy({
+        const deletedFeedback = await Feedback.destroy({
             where: {
-                id,
+                feedbackID: id,
                 userID
             }
         });
@@ -153,7 +152,7 @@ const deleteFeedback = async (req, res) => {
 
 module.exports = {
     createFeedback,
-    getFeedback,
+    getFeedbacks,
     updateFeedback,
     deleteFeedback,
     showFeedbackById

@@ -1,42 +1,48 @@
-'use strict';
+module.exports = (sequelize, DataTypes) => {
+  const Events = sequelize.define('events', {
+    eventID: {
+      allowNull: false,
+      autoIncrement: true,
+      primaryKey: true,
+      type: DataTypes.INTEGER
+    },
+    eventName: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    eventDate: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW
+    },
+    eventLocation: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    eventCreateBy: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    createdAt: {
+      allowNull: false,
+      type: DataTypes.DATE,
+      defaultValue: sequelize.literal('CURRENT_TIMESTAMP')
+    },
+    updatedAt: {
+      allowNull: false,
+      type: DataTypes.DATE,
+      defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
+      onUpdate: sequelize.literal('CURRENT_TIMESTAMP')
+    }
+  }, {
+    tableName: 'events'
+  });
 
-module.exports = {
-  async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('events', {
-      eventID: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        autoIncrement: true,
-        primaryKey: true
-      },
-      eventName: {
-        type: Sequelize.STRING(255),
-        allowNull: false
-      },
-      eventDate: {
-        type: Sequelize.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
-      },
-      eventLocation: {
-        type: Sequelize.STRING(255),
-        allowNull: false
-      },
-      createdAt: {
-        allowNull: false,
-        type: Sequelize.DATE,
-        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
-      },
-      updatedAt: {
-        allowNull: false,
-        type: Sequelize.DATE,
-        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
-        onUpdate: Sequelize.literal('CURRENT_TIMESTAMP')
-      }
+  Events.associate = (models) => {
+    Events.hasMany(models.feedback, {
+      foreignKey: 'eventID'
     });
-  },
+  };
 
-  async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('events');
-  }
+  return Events;
 };
