@@ -1,23 +1,39 @@
 const { successResponse, internalErrorResponse, errorResponse } = require('../Config/responseJson');
-const { Feedback, User, Event } = require('../Models');
+const { feedback } = require('../Models');
+const Sequelize = require('sequelize');
 
-const getFeedbacks = async (req, res) => {
+const average = async (req, res) => {
     try {
-        const feedbackList = await Feedback.findAll({
-            include: [
-                {
-                    model: User,
-                    as: 'user',
-                    attributes: ['id', 'name', 'email']
-                },
-                {
-                    model: Event,
-                    as: 'event',
-                    attributes: ['eventID', 'eventName']
-                }
+        const avg = await feedback.findAll({
+            attributes: [
+                [Sequelize.fn('AVG', Sequelize.col('rating')), 'average_rating']
+            ],
+        });
+
+        if (!avg) {
+            errorResponse(res, 'Average not calculated', 500);
+        } else {
+            successResponse(res, 'Average calculated successfully', avg, 201);
+        }
+    } catch (err) {
+        internalErrorResponse(res, err, 500);
+    }
+};
+
+const statistics = async (req, res) => {
+    try {
+        const stats = await feedback.findAll({
+            attributes: [
+                [Sequelize.fn('COUNT', Sequelize.col('rating')), 'total_feedback'],
+                [Sequelize.fn('AVG', Sequelize.col('rating')), 'average_rating']
             ]
         });
-        successResponse(res, 'Feedbacks fetched successfully', feedbackList, 200);
+
+        if (!stats) {
+            errorResponse(res, 'Statistics not found', 404);
+        } else {
+            successResponse(res, 'Statistics found successfully', stats, 201);
+        }
     } catch (err) {
         internalErrorResponse(res, err, 500);
     }
@@ -27,7 +43,7 @@ const createFeedback = async (req, res) => {
     const { userID, eventID, rating, comments } = req.body;
 
     try {
-        const newFeedback = await Feedback.create({
+        const newFeedback = await feedback.create({
             userID,
             eventID,
             rating,
@@ -44,38 +60,43 @@ const createFeedback = async (req, res) => {
     }
 };
 
+const getFeedbacks = async (req, res) => {
+    try {
+        const feedbackList = await feedback.findAll();
+        successResponse(res, 'Feedbacks fetched successfully', feedbackList, 200);
+    } catch (err) {
+        internalErrorResponse(res, err, 500);
+    }
+};
+
 const updateFeedback = async (req, res) => {
     const { id } = req.params;
-    const { rating, comments } = req.body;
-    const userID = req.user.id;
+    const { userID, eventID, rating, comments } = req.body;
 
     try {
-        const feedbackItem = await Feedback.findOne({
-            where: {
-                feedbackID: id,
-                userID
-            }
+        const existingFeedback = await feedback.findOne({
+            where: { feedbackID: id }
         });
 
-        if (!feedbackItem) {
+        if (!existingFeedback) {
             errorResponse(res, 'Feedback not found', 404);
             return;
         }
 
-        const updatedFeedback = await Feedback.update({
+        const updatedFeedback = await feedback.update({
+            userID,
+            eventID,
             rating,
             comments
         }, {
-            where: {
-                feedbackID: id,
-                userID
-            }
+            where: { feedbackID: id }
         });
 
         if (!updatedFeedback) {
             errorResponse(res, 'Feedback not updated', 400);
         } else {
-            successResponse(res, 'Feedback updated successfully', { id, rating, comments }, 200);
+            const updatedData = { feedbackID: existingFeedback.feedbackID, userID, eventID, rating, comments };
+            successResponse(res, 'Feedback updated successfully', updatedData, 200);
         }
     } catch (err) {
         internalErrorResponse(res, err, 500);
@@ -84,32 +105,16 @@ const updateFeedback = async (req, res) => {
 
 const showFeedbackById = async (req, res) => {
     const { id } = req.params;
-    const userID = req.user.id;
 
     try {
-        const feedbackItem = await Feedback.findOne({
-            where: {
-                feedbackID: id,
-                userID
-            },
-            include: [
-                {
-                    model: User,
-                    as: 'user',
-                    attributes: ['id', 'name', 'email']
-                },
-                {
-                    model: Event,
-                    as: 'event',
-                    attributes: ['eventID', 'eventName']
-                }
-            ]
+        const feedbackData = await feedback.findOne({
+            where: { feedbackID: id }
         });
 
-        if (!feedbackItem) {
+        if (!feedbackData) {
             errorResponse(res, 'Feedback not found', 404);
         } else {
-            successResponse(res, 'Feedback fetched successfully', feedbackItem, 200);
+            successResponse(res, 'Feedback fetched successfully', feedbackData, 200);
         }
     } catch (err) {
         internalErrorResponse(res, err, 500);
@@ -118,32 +123,16 @@ const showFeedbackById = async (req, res) => {
 
 const deleteFeedback = async (req, res) => {
     const { id } = req.params;
-    const userID = req.user.id;
 
     try {
-        const feedbackItem = await Feedback.findOne({
-            where: {
-                feedbackID: id,
-                userID
-            }
-        });
-
-        if (!feedbackItem) {
-            errorResponse(res, 'Feedback not found', 404);
-            return;
-        }
-
-        const deletedFeedback = await Feedback.destroy({
-            where: {
-                feedbackID: id,
-                userID
-            }
+        const deletedFeedback = await feedback.destroy({
+            where: { feedbackID: id }
         });
 
         if (!deletedFeedback) {
             errorResponse(res, 'Feedback not deleted', 400);
         } else {
-            successResponse(res, 'Feedback deleted successfully', feedbackItem, 200);
+            successResponse(res, 'Feedback deleted successfully', {}, 200);
         }
     } catch (err) {
         internalErrorResponse(res, err, 500);
@@ -155,5 +144,7 @@ module.exports = {
     getFeedbacks,
     updateFeedback,
     deleteFeedback,
-    showFeedbackById
+    showFeedbackById,
+    average,
+    statistics
 };
