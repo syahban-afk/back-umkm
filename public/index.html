@@ -1,13 +1,47 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 
 <head>
-  <title>Express</title>
-  <link rel="stylesheet" href="/stylesheets/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login/Register Page</title>
+  <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
 
 <body>
-  <h1>Express</h1>
-  <p>Welcome to Express</p>
+  <div class="container">
+    <h2>Login</h2>
+    <div class="form-group">
+      <label for="loginEmail">Email:</label>
+      <input type="email" id="loginEmail" placeholder="Enter email">
+    </div>
+    <div class="form-group">
+      <label for="loginPassword">Password:</label>
+      <input type="password" id="loginPassword" placeholder="Enter password">
+    </div>
+    <div class="form-group">
+      <button onclick="login()">Login</button>
+    </div>
+    <hr>
+    <h2>Register</h2>
+    <div class="form-group">
+      <label for="registerName">Name:</label>
+      <input type="text" id="registerName" placeholder="Enter name">
+    </div>
+    <div class="form-group">
+      <label for="registerEmail">Email:</label>
+      <input type="email" id="registerEmail" placeholder="Enter email">
+    </div>
+    <div class="form-group">
+      <label for="registerPassword">Password:</label>
+      <input type="password" id="registerPassword" placeholder="Enter password">
+    </div>
+    <div class="form-group">
+      <button onclick="register()">Register</button>
+    </div>
+  </div>
+
+  <script src="./javascripts/index.js"></script>
 </body>
 
 </html>

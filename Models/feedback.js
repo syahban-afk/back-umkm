@@ -33,11 +33,6 @@ module.exports = (sequelize, DataTypes) => {
         comments: {
             type: DataTypes.TEXT,
             allowNull: false
-        },
-        feedbackDate: {
-            type: DataTypes.DATE,
-            allowNull: false,
-            defaultValue: DataTypes.NOW
         }
     }, {
         tableName: 'feedback',
