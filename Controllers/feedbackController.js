@@ -1,43 +1,5 @@
 const { successResponse, internalErrorResponse, errorResponse } = require('../Config/responseJson');
 const { feedback } = require('../Models');
-const Sequelize = require('sequelize');
-
-const average = async (req, res) => {
-    try {
-        const avg = await feedback.findAll({
-            attributes: [
-                [Sequelize.fn('AVG', Sequelize.col('rating')), 'average_rating']
-            ],
-        });
-
-        if (!avg) {
-            errorResponse(res, 'Average not calculated', 500);
-        } else {
-            successResponse(res, 'Average calculated successfully', avg, 201);
-        }
-    } catch (err) {
-        internalErrorResponse(res, err, 500);
-    }
-};
-
-const statistics = async (req, res) => {
-    try {
-        const stats = await feedback.findAll({
-            attributes: [
-                [Sequelize.fn('COUNT', Sequelize.col('rating')), 'total_feedback'],
-                [Sequelize.fn('AVG', Sequelize.col('rating')), 'average_rating']
-            ]
-        });
-
-        if (!stats) {
-            errorResponse(res, 'Statistics not found', 404);
-        } else {
-            successResponse(res, 'Statistics found successfully', stats, 201);
-        }
-    } catch (err) {
-        internalErrorResponse(res, err, 500);
-    }
-};
 
 const createFeedback = async (req, res) => {
     const { userID, eventID, rating, comments } = req.body;
@@ -145,6 +107,4 @@ module.exports = {
     updateFeedback,
     deleteFeedback,
     showFeedbackById,
-    average,
-    statistics
 };

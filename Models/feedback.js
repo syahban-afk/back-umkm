@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
     const Feedback = sequelize.define('feedback', {
-        feedbackID: {
+        id: {
             allowNull: false,
             autoIncrement: true,
             primaryKey: true,

@@ -1,8 +1,9 @@
 const generateToken = require('../Config/generateToken');
 const { comparePassword, hashPassword } = require('../Config/bcrypt');
 const { errorResponse, successResponse, internalErrorResponse, notFoundResponse } = require('../Config/responseJson');
-const { admins } = require('../Models');
-
+const { admins,  } = require('../Models');
+const { feedback } = require('../Models');
+const Sequelize = require('sequelize');
 
 async function register(req, res) {
     try {
@@ -94,9 +95,48 @@ async function logout(req, res) {
     }
 };
 
+const average = async (req, res) => {
+    try {
+        const avg = await feedback.findAll({
+            attributes: [
+                [Sequelize.fn('AVG', Sequelize.col('rating')), 'average_rating']
+            ],
+        });
+
+        if (!avg) {
+            errorResponse(res, 'Average not calculated', 500);
+        } else {
+            successResponse(res, 'Average calculated successfully', avg, 201);
+        }
+    } catch (err) {
+        internalErrorResponse(res, err, 500);
+    }
+};
+
+const statistics = async (req, res) => {
+    try {
+        const stats = await feedback.findAll({
+            attributes: [
+                [Sequelize.fn('COUNT', Sequelize.col('rating')), 'total_feedback'],
+                [Sequelize.fn('AVG', Sequelize.col('rating')), 'average_rating']
+            ]
+        });
+
+        if (!stats) {
+            errorResponse(res, 'Statistics not found', 404);
+        } else {
+            successResponse(res, 'Statistics found successfully', stats, 201);
+        }
+    } catch (err) {
+        internalErrorResponse(res, err, 500);
+    }
+};
+
 module.exports = {
     register,
     login,
     me,
     logout,
+    average,
+    statistics
 }
