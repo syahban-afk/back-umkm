@@ -1,8 +1,11 @@
 'use strict';
 
+/** @type {import('sequelize-cli').Migration} */
+
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('feedback', {
+    await queryInterface.createTable('feedback', { id: Sequelize.INTEGER });
+    return queryInterface.createTable('feedback', {
       id: {
         type: Sequelize.INTEGER,
         allowNull: false,
@@ -24,7 +27,7 @@ module.exports = {
         allowNull: false,
         references: {
           model: 'events',
-          key: 'eventID'
+          key: 'id'
         },
         onUpdate: 'CASCADE',
         onDelete: 'CASCADE'
@@ -43,14 +46,14 @@ module.exports = {
       },
       createdAt: {
         allowNull: false,
-        type: DataTypes.DATE,
-        defaultValue: sequelize.literal('CURRENT_TIMESTAMP')
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
       },
       updatedAt: {
         allowNull: false,
-        type: DataTypes.DATE,
-        defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
-        onUpdate: sequelize.literal('CURRENT_TIMESTAMP')
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+        onUpdate: Sequelize.literal('CURRENT_TIMESTAMP')
       }
     });
   },
