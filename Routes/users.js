@@ -8,7 +8,8 @@ const {
   updatePassword,
   verifyEmail,
   resendVerificationEmail,
-  uploadPhotoProfile
+  uploadPhotoProfile,
+  updateProfile
 } = require("../Controllers/authControllerUsers");
 
 const authentication = require("../Middleware/authenticationUsers");
@@ -21,7 +22,8 @@ router.post("/resend-verification", resendVerificationEmail);
 
 router.get("/me", authentication, me);
 router.post("/logout", authentication, logout);
-router.post("/update-password", authentication, updatePassword);
+router.patch("/update-password", authentication, updatePassword);
 router.post("/upload-photo", authentication, upload.single("photo"), uploadPhotoProfile);
+router.patch("/update-profile", authentication, updateProfile);
 
 module.exports = router;

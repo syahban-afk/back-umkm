@@ -16,7 +16,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      Skills: {
+      skills: {
         type: DataTypes.JSON,
         allowNull: true,
       },

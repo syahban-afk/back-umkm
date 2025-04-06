@@ -123,7 +123,7 @@ async function me(req, res) {
         id: user.id,
         name: user.name,
         email: user.email,
-        Skills: user.Skills,
+        skills: user.skills,
         profilePhoto: photoUrl,
       },
       200
@@ -257,6 +257,42 @@ async function uploadPhotoProfile(req, res) {
   }
 }
 
+const updateProfile = async (req, res) => {
+  const { name, skills, email } = req.body;
+
+  try {
+      const user = await users.findOne({
+          where: { email: email }
+      });
+
+      if (!user) {
+          errorResponse(res, 'user not found', 404);
+          return;
+      }
+
+      const updateduser = await users.update({
+          name,
+          skills,
+      }, {
+          where: { email: email }
+      });
+
+      const userResponse = {
+          email: user.email,
+          name,
+          skills,
+      };
+
+      if (!updateduser) {
+          errorResponse(res, 'user not updated', 400);
+      } else {
+          successResponse(res, 'user updated successfully', userResponse, 200);
+      }
+  } catch (err) {
+      internalErrorResponse(res, err, 500);
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -266,4 +302,5 @@ module.exports = {
   verifyEmail,
   resendVerificationEmail,
   uploadPhotoProfile,
+  updateProfile,
 };
