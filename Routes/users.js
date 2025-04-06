@@ -1,47 +1,26 @@
 const express = require("express");
 const router = express.Router();
-const multer = require("multer");
-const path = require("path");
-
 const {
   register,
   login,
   me,
   logout,
-  verifyEmail,
-  forgotPassword,
   updatePassword,
-  uploadProfilePhoto,
+  verifyEmail,
+  resendVerificationEmail
 } = require("../Controllers/authControllerUsers");
+
 const authentication = require("../Middleware/authenticationUsers");
 
-const storage = multer.diskStorage({
-  destination: "public/img/",
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  },
-});
-const upload = multer({ storage });
-
-// Auth Routes
+// ✅ Public Routes
 router.post("/register", register);
 router.post("/login", login);
+router.get("/verify/:token", verifyEmail);
+router.post("/resend-verification", resendVerificationEmail);
+
+// ✅ Protected Routes (pakai middleware auth)
 router.get("/me", authentication, me);
 router.post("/logout", authentication, logout);
-
-// Password Management Routes
-router.post("/forgot-password", forgotPassword);
-router.post("/update-password", authentication, updatePassword);
-
-// Profile Management Routes
-router.post(
-  "/upload-profile-photo",
-  authentication,
-  upload.single("profilePhoto"),
-  uploadProfilePhoto
-);
-
-// Email Verification Route
-router.get("/verify/:token", verifyEmail);
+router.post("/update-password/:id", authentication, updatePassword);
 
 module.exports = router;

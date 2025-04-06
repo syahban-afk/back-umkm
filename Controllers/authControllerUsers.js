@@ -1,75 +1,57 @@
 require("dotenv").config();
-const nodemailer = require("nodemailer");
-const SibApiV3Sdk = require('sib-api-v3-sdk');
-const express = require("express");
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+const crypto = require("crypto");
+const SibApiV3Sdk = require("sib-api-v3-sdk");
 const generateToken = require("../Config/generateToken");
 const { comparePassword, hashPassword } = require("../Config/bcrypt");
 const {
-  errorResponse,
   successResponse,
-  internalErrorResponse,
+  errorResponse,
+  validationErrorResponse,
   notFoundResponse,
+  internalErrorResponse,
 } = require("../Config/responseJson");
+
 const { users } = require("../Models");
+const {
+  BREVO_API_KEY,
+  BASE_URL,
+  EMAIL_ADMIN
+} = process.env
 
-const { EMAIL_ADMIN, EMAIL_PASS, JWT_SECRET_KEY, BREVO_API_KEY } = process.env;
-
-const storage = multer.diskStorage({
-    destination: async (req, file, cb) => {
-      try {
-        const user = await users.findByPk(req.body.id);
-        if (!user) return cb(new Error("User not found"));
-  
-        const userFolder = `public/img/${user.name.replace(/\s+/g, '_')}`;
-        if (!fs.existsSync(userFolder)) {
-          fs.mkdirSync(userFolder, { recursive: true });
-        }
-        cb(null, userFolder);
-      } catch (error) {
-        cb(error);
-      }
-    },
-    filename: (req, file, cb) => {
-      cb(null, `${Date.now()}-${file.originalname}`);
-    }
-  });
-  
-  const upload = multer({ 
-    storage,
-    limits: { fileSize: 4 * 1024 * 1024 }, // Batas ukuran file 4MB
-    fileFilter: (req, file, cb) => {
-      const fileTypes = /jpeg|jpg|png/;
-      const extName = fileTypes.test(path.extname(file.originalname).toLowerCase());
-      const mimeType = fileTypes.test(file.mimetype);
-      if (extName && mimeType) {
-        return cb(null, true);
-      } else {
-        return cb(new Error("Only .png, .jpg, and .jpeg format allowed!"));
-      }
-    }
-  });
-  
 async function register(req, res) {
   try {
     const { name, email, password } = req.body;
-    // Check if user already exists
+
     const existingUser = await users.findOne({ where: { email } });
-    if (existingUser) {
-      errorResponse(res, "User already exists", 400);
-    }
+    if (existingUser) return errorResponse(res, "User already exists", 400);
 
-    // Hash the password
     const hashedPassword = await hashPassword(password);
+    const verificationToken = crypto.randomBytes(32).toString("hex");
 
-    // Create new user
     const newUser = await users.create({
       name,
       email,
       password: hashedPassword,
+      isVerified: false,
+      verificationToken,
     });
+
+    const defaultClient = SibApiV3Sdk.ApiClient.instance;
+    defaultClient.authentications["api-key"].apiKey = BREVO_API_KEY;
+
+    const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+    const sendSmtpEmail = {
+      to: [{ email, name }],
+      sender: { email: EMAIL_ADMIN, name: "Bazma-Portfolio" },
+      subject: "Verifikasi Email Akun",
+      htmlContent: `
+        <p>Hai ${name},</p>
+        <p>Klik link berikut untuk verifikasi akunmu:</p>
+        <a href="${BASE_URL}/verify/${verificationToken}">Verifikasi Sekarang</a>
+      `,
+    };
+
+    await apiInstance.sendTransacEmail(sendSmtpEmail);
 
     const userResponse = {
       id: newUser.id,
@@ -79,7 +61,12 @@ async function register(req, res) {
       updatedAt: newUser.updatedAt,
     };
 
-    successResponse(res, "User registered successfully", userResponse, 201);
+    successResponse(
+      res,
+      "User registered successfully. Please verify your email.",
+      userResponse,
+      201
+    );
   } catch (error) {
     internalErrorResponse(res, error);
   }
@@ -89,17 +76,15 @@ async function login(req, res) {
   try {
     const { email, password } = req.body;
 
-    // Check if user exists
     const user = await users.findOne({ where: { email } });
-    if (!user) {
-      notFoundResponse(res, "User not found");
+    if (!user) return notFoundResponse(res, "User not found");
+
+    if (!user.isVerified) {
+      return errorResponse(res, "Email belum diverifikasi. Cek inbox kamu.", 403);
     }
 
-    // Validate password
     const validPassword = await comparePassword(password, user.password);
-    if (!validPassword) {
-      errorResponse(res, "Invalid password", 401);
-    }
+    if (!validPassword) return errorResponse(res, "Invalid password", 401);
 
     const userResponse = {
       id: user.id,
@@ -108,15 +93,7 @@ async function login(req, res) {
     };
 
     const token = generateToken(user);
-    successResponse(
-      res,
-      "Logged in successfully",
-      {
-        user: userResponse,
-        token,
-      },
-      200
-    );
+    successResponse(res, "Logged in successfully", { user: userResponse, token }, 200);
   } catch (error) {
     console.error("Error logging in user:", error);
     internalErrorResponse(res, error);
@@ -147,104 +124,94 @@ async function logout(req, res) {
   }
 }
 
-async function sendVerificationEmail(email, token) {
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: EMAIL_ADMIN,
-      pass: EMAIL_PASS,
-    },
-  });
-
-  const url = `http://localhost:3000/api/users/verify/${token}`;
-  await transporter.sendMail({
-    to: email,
-    subject: "Email Verification",
-    html: `Click <a href="${url}">here</a> to verify your email.`,
-  });
-}
-
-async function verifyEmail(req, res) {
-  const { token } = req.params;
+async function updatePassword(req, res) {
+  const { id } = req.params;
+  const { newPassword } = req.body;
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET_KEY);
-    await User.update({ verified: true }, { where: { id: decoded.id } });
-    successResponse(res, "Email verified successfully.", null, 200);
+    if (!newPassword || newPassword.length < 6) {
+      return validationErrorResponse(
+        res,
+        "Password harus minimal 6 karakter.",
+        400
+      );
+    }
+
+    const user = await users.findOne({ where: { id } });
+    if (!user) {
+      return notFoundResponse(res, "User tidak ditemukan", 404);
+    }
+    const hashedPassword = await hashPassword(newPassword);
+    await users.update({ password: hashedPassword }, { where: { id } });
+    successResponse(res, "Password berhasil diperbarui.", 200);
   } catch (error) {
-    console.error("Invalid token", error);
     internalErrorResponse(res, error);
   }
 }
 
-// Fungsi untuk mengatur ulang kata sandi
-async function forgotPassword  (req, res) {
+async function verifyEmail(req, res) {
+  try {
+    const { token } = req.params;
+    const user = await users.findOne({ where: { verificationToken: token } });
+
+    if (!user) return notFoundResponse(res, "Token tidak valid", 404);
+
+    user.isVerified = true;
+    user.verificationToken = null;
+    await user.save();
+
+    successResponse(res, "Email berhasil diverifikasi. Silakan login.", null, 200);
+  } catch (error) {
+    internalErrorResponse(res, error);
+  }
+}
+
+async function resendVerificationEmail(req, res) {
   const { email } = req.body;
 
   try {
-    const user = await User.findOne({ where: { email } });
-    if (!user) return notFoundResponse(res, "user not found")
+    const user = await users.findOne({ where: { email } });
+    if (!user) return notFoundResponse(res, "User tidak ditemukan", 404);
 
-    const token = jwt.sign({ id: user.id }, JWT_SECRET_KEY, { expiresIn: "1h" });
-    await sendVerificationEmail(email, token);
-
-    successResponse(res, "Password reset email sent.", 200)
-  } catch (error) {
-    internalErrorResponse(res, error)
-  }
-};
-
-async function updatePassword (req, res) {
-  const { id, newPassword } = req.body;
-
-  try {
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await User.update({ password: hashedPassword }, { where: { id } });
-    successResponse(res, "Password updated successfully.", 200)
-  } catch (error) {
-    internalErrorResponse(res, error)
-  }
-};
-
-async function uploadProfilePhoto(req, res) {
-    const { id } = req.body;
-    
-    if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded." });
+    if (user.isVerified) {
+      return successResponse(res, "Email sudah diverifikasi", null, 200);
     }
-  
-    try {
-      const user = await users.findByPk(id);
-      if (!user) {
-        return res.status(404).json({ message: "User not found." });
-      }
-  
-      // Hapus foto lama jika ada
-      if (user.profilePhoto) {
-        const oldPhotoPath = path.join(__dirname, '..', user.profilePhoto);
-        if (fs.existsSync(oldPhotoPath)) {
-          fs.unlinkSync(oldPhotoPath);
-        }
-      }
-  
-      // Simpan path baru ke database
-      const filePath = `/public/img/${user.name.replace(/\s+/g, '_')}/${req.file.filename}`;
-      await users.update({ profilePhoto: filePath }, { where: { id } });
-  
-      return successResponse(res, "Profile photo uploaded successfully.", 200);
-    } catch (error) {
-      return internalErrorResponse(res, error);
-    }
+    const newToken = crypto.randomBytes(32).toString("hex");
+
+    user.verificationToken = newToken;
+    await user.save();
+    const defaultClient = SibApiV3Sdk.ApiClient.instance;
+    defaultClient.authentications["api-key"].apiKey = BREVO_API_KEY;
+
+    const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+    const sendSmtpEmail = {
+      to: [{ email: user.email, name: user.name }],
+      sender: { email: EMAIL_ADMIN, name: "Bazma-Potfolio" },
+      subject: "Verifikasi Ulang Email",
+      htmlContent: `
+        <p>Halo ${user.name},</p>
+        <p>Klik link berikut untuk verifikasi ulang akunmu:</p>
+        <a href="${BASE_URL}/verify/${newToken}">Verifikasi Sekarang</a>
+      `,
+    };
+
+    await apiInstance.sendTransacEmail(sendSmtpEmail);
+
+    successResponse(res, "Email verifikasi telah dikirim ulang", null, 200);
+  } catch (error) {
+    console.error("Error resending verification email:", error);
+    internalErrorResponse(res, error);
   }
+}
+
+
 
 module.exports = {
   register,
   login,
   me,
   logout,
-  sendVerificationEmail,
-  verifyEmail,
-  forgotPassword,
   updatePassword,
-  uploadProfilePhoto
+  verifyEmail,
+  resendVerificationEmail
 };
