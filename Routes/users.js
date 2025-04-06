@@ -7,20 +7,21 @@ const {
   logout,
   updatePassword,
   verifyEmail,
-  resendVerificationEmail
+  resendVerificationEmail,
+  uploadPhotoProfile
 } = require("../Controllers/authControllerUsers");
 
 const authentication = require("../Middleware/authenticationUsers");
+const upload = require("../Middleware/uploadPhoto");
 
-// ✅ Public Routes
 router.post("/register", register);
 router.post("/login", login);
 router.get("/verify/:token", verifyEmail);
 router.post("/resend-verification", resendVerificationEmail);
 
-// ✅ Protected Routes (pakai middleware auth)
 router.get("/me", authentication, me);
 router.post("/logout", authentication, logout);
-router.post("/update-password/:id", authentication, updatePassword);
+router.post("/update-password", authentication, updatePassword);
+router.post("/upload-photo", authentication, upload.single("photo"), uploadPhotoProfile);
 
 module.exports = router;

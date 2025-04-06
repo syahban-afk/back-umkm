@@ -1,4 +1,6 @@
 require("dotenv").config();
+const fs = require("fs");
+const path = require("path");
 const crypto = require("crypto");
 const SibApiV3Sdk = require("sib-api-v3-sdk");
 const generateToken = require("../Config/generateToken");
@@ -12,11 +14,7 @@ const {
 } = require("../Config/responseJson");
 
 const { users } = require("../Models");
-const {
-  BREVO_API_KEY,
-  BASE_URL,
-  EMAIL_ADMIN
-} = process.env
+const { BREVO_API_KEY, BASE_URL, EMAIL_ADMIN } = process.env;
 
 async function register(req, res) {
   try {
@@ -80,7 +78,11 @@ async function login(req, res) {
     if (!user) return notFoundResponse(res, "User not found");
 
     if (!user.isVerified) {
-      return errorResponse(res, "Email belum diverifikasi. Cek inbox kamu.", 403);
+      return errorResponse(
+        res,
+        "Email belum diverifikasi. Cek inbox kamu.",
+        403
+      );
     }
 
     const validPassword = await comparePassword(password, user.password);
@@ -93,7 +95,12 @@ async function login(req, res) {
     };
 
     const token = generateToken(user);
-    successResponse(res, "Logged in successfully", { user: userResponse, token }, 200);
+    successResponse(
+      res,
+      "Logged in successfully",
+      { user: userResponse, token },
+      200
+    );
   } catch (error) {
     console.error("Error logging in user:", error);
     internalErrorResponse(res, error);
@@ -102,13 +109,25 @@ async function login(req, res) {
 
 async function me(req, res) {
   try {
-    const user = await users.findByPk(req.user.id, {
-      attributes: ["id", "name", "profilePhoto", "email", "Skills"],
-    });
+    const photoUrl = user.profilePhoto
+      ? `${req.protocol}://${req.get("host")}/${user.profilePhoto}`
+      : null;
+    const user = await users.findByPk(req.user.id);
     if (!user) {
       errorResponse(res, "User not found", 404);
     }
-    successResponse(res, "User fetched successfully", user, 200);
+    successResponse(
+      res,
+      "User fetched successfully",
+      {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        Skills: user.Skills,
+        profilePhoto: photoUrl,
+      },
+      200
+    );
   } catch (error) {
     console.error("Error fetching user:", error);
     internalErrorResponse(res, error);
@@ -125,8 +144,7 @@ async function logout(req, res) {
 }
 
 async function updatePassword(req, res) {
-  const { id } = req.params;
-  const { newPassword } = req.body;
+  const { email, newPassword } = req.body;
 
   try {
     if (!newPassword || newPassword.length < 6) {
@@ -137,12 +155,12 @@ async function updatePassword(req, res) {
       );
     }
 
-    const user = await users.findOne({ where: { id } });
+    const user = await users.findOne({ where: { email } });
     if (!user) {
-      return notFoundResponse(res, "User tidak ditemukan", 404);
+      return notFoundResponse(res, (`User dengan `+email ` tidak ditemukan`), 404);
     }
     const hashedPassword = await hashPassword(newPassword);
-    await users.update({ password: hashedPassword }, { where: { id } });
+    await users.update({ password: hashedPassword }, { where: { email } });
     successResponse(res, "Password berhasil diperbarui.", 200);
   } catch (error) {
     internalErrorResponse(res, error);
@@ -160,7 +178,12 @@ async function verifyEmail(req, res) {
     user.verificationToken = null;
     await user.save();
 
-    successResponse(res, "Email berhasil diverifikasi. Silakan login.", null, 200);
+    successResponse(
+      res,
+      "Email berhasil diverifikasi. Silakan login.",
+      null,
+      200
+    );
   } catch (error) {
     internalErrorResponse(res, error);
   }
@@ -204,7 +227,35 @@ async function resendVerificationEmail(req, res) {
   }
 }
 
+async function uploadPhotoProfile(req, res) {
+  try {
+    const userId = req.user.id;
 
+    if (!req.file) {
+      return validationErrorResponse(res, "Foto tidak ditemukan.", 400);
+    }
+
+    const user = await users.findOne({ where: { id: userId } });
+    const oldPhotoPath = user.profilePhoto;
+
+    if (oldPhotoPath) {
+      const oldPhotoFullPath = path.join(__dirname, "..", oldPhotoPath);
+      fs.unlinkSync(oldPhotoFullPath);
+    }
+
+    const photoPath = req.file.path;
+    await users.update({ profilePhoto: photoPath }, { where: { id: userId } });
+    successResponse(
+      res,
+      "Foto profil berhasil diupload.",
+      // { photo: photoPath },
+      null,
+      200
+    );
+  } catch (error) {
+    internalErrorResponse(res, error.message);
+  }
+}
 
 module.exports = {
   register,
@@ -213,5 +264,6 @@ module.exports = {
   logout,
   updatePassword,
   verifyEmail,
-  resendVerificationEmail
+  resendVerificationEmail,
+  uploadPhotoProfile,
 };
