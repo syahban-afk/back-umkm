@@ -18,10 +18,6 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: true
       },
-      skills: {
-        type: Sequelize.JSON,
-        allowNull: true
-      },
       email: {
         type: Sequelize.STRING,
         allowNull: false,

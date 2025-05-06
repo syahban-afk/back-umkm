@@ -1,36 +1,27 @@
 require('dotenv').config()
 
-const {
-  DB_USERNAME,
-  DB_HOSTNAME,
-  DB_DIALECT,
-  DB_PASSWORD,
-  DB_NAME,
-  DB_PORT
-} = process.env
-
 module.exports = {
   "development": {
-    "username": DB_USERNAME,
-    "password": DB_PASSWORD,
-    "database": DB_NAME,
-    "host": DB_HOSTNAME,
-    "dialect": DB_DIALECT
+    "username": process.env.DB_USERNAME,
+    "password": process.env.DB_PASSWORD,
+    "database": process.env.DB_NAME,
+    "host": process.env.DB_HOSTNAME,
+    "dialect": process.env.DB_DIALECT
   },
   "test": {
-    "username": DB_USERNAME,
-    "password": DB_PASSWORD,
-    "database": DB_NAME,
-    "host": DB_HOSTNAME,
-    "dialect": DB_DIALECT
+    "username": process.env.DB_USERNAME,
+    "password": process.env.DB_PASSWORD,
+    "database": process.env.DB_NAME,
+    "host": process.env.DB_HOSTNAME,
+    "dialect": process.env.DB_DIALECT
   },
   "production": {
-    "username": DB_USERNAME,
-    "password": DB_PASSWORD,
-    "database": DB_NAME,
-    "host": DB_HOSTNAME,
-    "dialect": DB_DIALECT,
-    "port": DB_PORT || 3306,
+    "username": process.env.DB_USERNAME,
+    "password": process.env.DB_PASSWORD,
+    "database": process.env.DB_NAME,
+    "host": process.env.DB_HOSTNAME,
+    "dialect": process.env.DB_DIALECT,
+    "port": process.env.DB_PORT || 3306,
     "pool": {
       "max" : 5 ,
       "min" : 0 ,
@@ -39,3 +30,4 @@ module.exports = {
     }
   }
 }
+

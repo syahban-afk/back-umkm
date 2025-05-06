@@ -123,7 +123,6 @@ async function me(req, res) {
         id: user.id,
         name: user.name,
         email: user.email,
-        skills: user.skills,
         profilePhoto: photoUrl,
       },
       200
@@ -258,7 +257,7 @@ async function uploadPhotoProfile(req, res) {
 }
 
 const updateProfile = async (req, res) => {
-  const { name, skills, email } = req.body;
+  const { name, email } = req.body;
 
   try {
       const user = await users.findOne({
@@ -272,15 +271,13 @@ const updateProfile = async (req, res) => {
 
       const updateduser = await users.update({
           name,
-          skills,
       }, {
           where: { email: email }
       });
 
       const userResponse = {
           email: user.email,
-          name,
-          skills,
+          name
       };
 
       if (!updateduser) {
