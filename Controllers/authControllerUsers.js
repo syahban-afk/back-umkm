@@ -247,7 +247,6 @@ async function uploadPhotoProfile(req, res) {
     successResponse(
       res,
       "Foto profil berhasil diupload.",
-      // { photo: photoPath },
       null,
       200
     );
