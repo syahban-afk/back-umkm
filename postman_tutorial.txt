@@ -1,0 +1,269 @@
+TUTORIAL PENGGUNAAN API BACKEND UMKM
+===================================
+
+BASE URL: http://localhost:3000/api
+
+A. USERS
+--------
+1. Register User
+   - Method: POST
+   - Endpoint: /users/register
+   - Body (raw JSON):
+   {
+       "name": "string",
+       "email": "string",
+       "password": "string"
+   }
+
+2. Login User
+   - Method: POST
+   - Endpoint: /users/login
+   - Body (raw JSON):
+   {
+       "email": "string",
+       "password": "string"
+   }
+
+3. Upload Foto Profil
+   - Method: POST
+   - Endpoint: /users/upload-photo
+   - Headers: 
+     - Authorization: Bearer {token}
+   - Body (form-data):
+     - photo: [file]
+
+B. PRODUCTS
+-----------
+1. Buat Produk Baru
+   - Method: POST
+   - Endpoint: /products
+   - Body (raw JSON):
+   {
+       "name": "string",
+       "description": "string",
+       "price": number,
+       "stock": number,
+       "categoryId": number
+   }
+
+2. Upload Foto Produk
+   - Method: POST
+   - Endpoint: /products/{id}/upload-photo
+   - Body (form-data):
+     - photo: [file]
+
+3. Lihat Semua Produk
+   - Method: GET
+   - Endpoint: /products
+
+4. Lihat Detail Produk
+   - Method: GET
+   - Endpoint: /products/{id}
+
+5. Update Produk
+   - Method: PUT
+   - Endpoint: /products/{id}
+   - Body (raw JSON):
+   {
+       "name": "string",
+       "description": "string",
+       "price": number,
+       "stock": number,
+       "categoryId": number
+   }
+
+6. Hapus Produk
+   - Method: DELETE
+   - Endpoint: /products/{id}
+
+C. PRODUCT CATEGORIES
+--------------------
+1. Buat Kategori
+   - Method: POST
+   - Endpoint: /product-categories
+   - Body (raw JSON):
+   {
+       "name": "string"
+   }
+
+2. Lihat Semua Kategori
+   - Method: GET
+   - Endpoint: /product-categories
+
+3. Lihat Detail Kategori
+   - Method: GET
+   - Endpoint: /product-categories/{id}
+
+D. CUSTOMERS
+-----------
+1. Buat Customer
+   - Method: POST
+   - Endpoint: /customers
+   - Body (raw JSON):
+   {
+       "name": "string",
+       "email": "string",
+       "address": "string",
+       "phone": "string"
+   }
+
+2. Lihat Semua Customer
+   - Method: GET
+   - Endpoint: /customers
+
+E. ORDERS
+---------
+1. Buat Order
+   - Method: POST
+   - Endpoint: /orders
+   - Body (raw JSON):
+   {
+       "customerId": number,
+       "total": number,
+       "status": "string"
+   }
+
+2. Lihat Semua Order
+   - Method: GET
+   - Endpoint: /orders
+
+3. Lihat Detail Order
+   - Method: GET
+   - Endpoint: /orders/{id}
+
+F. ORDER DETAILS
+---------------
+1. Tambah Detail Order
+   - Method: POST
+   - Endpoint: /order-details
+   - Body (raw JSON):
+   {
+       "orderId": number,
+       "productId": number,
+       "quantity": number,
+       "price": number
+   }
+
+2. Lihat Detail Order
+   - Method: GET
+   - Endpoint: /order-details/order/{orderId}
+
+G. WISHLISTS
+------------
+1. Tambah ke Wishlist
+   - Method: POST
+   - Endpoint: /wishlists
+   - Body (raw JSON):
+   {
+       "customerId": number,
+       "productId": number
+   }
+
+2. Lihat Wishlist Customer
+   - Method: GET
+   - Endpoint: /wishlists/customer/{customerId}
+
+H. REVIEWS
+----------
+1. Tambah Review
+   - Method: POST
+   - Endpoint: /product-reviews
+   - Body (raw JSON):
+   {
+       "productId": number,
+       "customerId": number,
+       "rating": number,
+       "comment": "string"
+   }
+
+2. Upload Foto Review
+   - Method: POST
+   - Endpoint: /product-reviews/{id}/upload-photo
+   - Body (form-data):
+     - photo: [file]
+
+3. Lihat Review Produk
+   - Method: GET
+   - Endpoint: /product-reviews/product/{productId}
+
+I. DISCOUNTS
+------------
+1. Buat Diskon
+   - Method: POST
+   - Endpoint: /discounts
+   - Body (raw JSON):
+   {
+       "discountCategoryId": number,
+       "productId": number,
+       "percentage": number,
+       "validUntil": "2024-12-31"
+   }
+
+2. Lihat Semua Diskon
+   - Method: GET
+   - Endpoint: /discounts
+
+J. DISCOUNT CATEGORIES
+---------------------
+1. Buat Kategori Diskon
+   - Method: POST
+   - Endpoint: /discount-categories
+   - Body (raw JSON):
+   {
+       "name": "string",
+       "description": "string"
+   }
+
+2. Lihat Semua Kategori Diskon
+   - Method: GET
+   - Endpoint: /discount-categories
+
+K. DELIVERIES
+-------------
+1. Buat Pengiriman
+   - Method: POST
+   - Endpoint: /deliveries
+   - Body (raw JSON):
+   {
+       "orderId": number,
+       "deliveryAddress": "string",
+       "deliveryStatus": "string",
+       "deliveredAt": "2024-01-01 12:00:00"
+   }
+
+2. Update Status Pengiriman
+   - Method: PUT
+   - Endpoint: /deliveries/{id}
+   - Body (raw JSON):
+   {
+       "deliveryStatus": "string",
+       "deliveredAt": "2024-01-01 12:00:00"
+   }
+
+L. PAYMENTS
+-----------
+1. Buat Pembayaran
+   - Method: POST
+   - Endpoint: /payments
+   - Body (raw JSON):
+   {
+       "orderId": number,
+       "amount": number,
+       "paymentMethod": "string",
+       "paidAt": "2024-01-01 12:00:00"
+   }
+
+2. Lihat Pembayaran Order
+   - Method: GET
+   - Endpoint: /payments/order/{orderId}
+
+CATATAN:
+1. Ganti {id}, {orderId}, {productId}, {customerId} dengan ID yang sesuai
+2. Format tanggal menggunakan ISO format (YYYY-MM-DD HH:mm:ss)
+3. Untuk endpoint yang membutuhkan autentikasi, tambahkan header Authorization dengan token
+4. Semua response akan mengikuti format:
+   {
+       "status": boolean,
+       "message": "string",
+       "data": object/array
+   }

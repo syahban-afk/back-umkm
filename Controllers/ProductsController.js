@@ -1,4 +1,6 @@
 const { products } = require("../Models");
+const fs = require("fs");
+const path = require("path");
 const {
   successResponse,
   errorResponse,
@@ -9,11 +11,10 @@ const {
 
 const createProduct = async (req, res) => {
   try {
-    const { name, productPhoto, description, price, stock, categoryId } = req.body;
+    const { name, description, price, stock, categoryId } = req.body;
 
     const newProduct = await products.create({
       name,
-      productPhoto,
       description,
       price,
       stock,
@@ -92,10 +93,44 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+async function uploadProductPhoto(req, res) {
+  try {
+    const { id } = req.params;
+
+    if (!req.file) {
+      return validationErrorResponse(res, "Foto produk tidak ditemukan.", 400);
+    }
+
+    const product = await products.findOne({ where: { id } });
+    if (!product) {
+      return notFoundResponse(res, "Produk tidak ditemukan");
+    }
+
+    const oldPhotoPath = product.productPhoto;
+
+    if (oldPhotoPath) {
+      const oldPhotoFullPath = path.join(__dirname, "..", oldPhotoPath);
+      fs.unlinkSync(oldPhotoFullPath);
+    }
+
+    const photoPath = req.file.path;
+    await products.update({ productPhoto: photoPath }, { where: { id } });
+    successResponse(
+      res,
+      "Foto produk berhasil diupload.",
+      null,
+      200
+    );
+  } catch (error) {
+    internalErrorResponse(res, error.message);
+  }
+}
+
 module.exports = {
   createProduct,
   getAllProducts,
   getProductById,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  uploadProductPhoto
 };

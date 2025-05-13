@@ -1,4 +1,6 @@
 const { Products_Reviews, Products, Customers } = require("../Models");
+const fs = require("fs");
+const path = require("path");
 const {
   successResponse,
   errorResponse,
@@ -8,12 +10,11 @@ const {
 
 const createProductReview = async (req, res) => {
   try {
-    const { productId, customerId, photo, rating, comment } = req.body;
+    const { productId, customerId, rating, comment } = req.body;
 
     const newReview = await Products_Reviews.create({
       productId,
       customerId,
-      photo,
       rating,
       comment
     });
@@ -138,11 +139,45 @@ const deleteProductReview = async (req, res) => {
   }
 };
 
+async function uploadReviewPhoto(req, res) {
+  try {
+    const { id } = req.params;
+
+    if (!req.file) {
+      return validationErrorResponse(res, "Foto review tidak ditemukan.", 400);
+    }
+
+    const review = await Products_Reviews.findOne({ where: { id } });
+    if (!review) {
+      return notFoundResponse(res, "Review tidak ditemukan");
+    }
+
+    const oldPhotoPath = review.photo;
+
+    if (oldPhotoPath) {
+      const oldPhotoFullPath = path.join(__dirname, "..", oldPhotoPath);
+      fs.unlinkSync(oldPhotoFullPath);
+    }
+
+    const photoPath = req.file.path;
+    await Products_Reviews.update({ photo: photoPath }, { where: { id } });
+    successResponse(
+      res,
+      "Foto review berhasil diupload.",
+      null,
+      200
+    );
+  } catch (error) {
+    internalErrorResponse(res, error.message);
+  }
+}
+
 module.exports = {
   createProductReview,
   getAllProductReviews,
   getProductReviewById,
   getReviewsByProductId,
   updateProductReview,
-  deleteProductReview
+  deleteProductReview,
+  uploadReviewPhoto
 };
